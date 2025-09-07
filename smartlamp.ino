@@ -1,15 +1,13 @@
-//Autor: Fábio Henrique Cabrini
+// Visionary Solutuions:
+// Arthur Araújo Tenório - 562272
+// Breno Golçalves Báo - 564037
+// Rodrigo Cardoso Tadeo - 562010
+// Vinicius Cavalcanti dos Reis - 562063
 //Resumo: Esse programa possibilita ligar e desligar o led onboard, além de mandar o status para o Broker MQTT possibilitando o Helix saber
 //se o led está ligado ou desligado.
-//Revisões:
-//Rev1: 26-08-2023 Código portado para o ESP32 e para realizar a leitura de luminosidade e publicar o valor em um tópico aprorpiado do broker 
-//Autor Rev1: Lucas Demetrius Augusto 
-//Rev2: 28-08-2023 Ajustes para o funcionamento no FIWARE Descomplicado
-//Autor Rev2: Fábio Henrique Cabrini
-//Rev3: 1-11-2023 Refinamento do código e ajustes para o funcionamento no FIWARE Descomplicado
-//Autor Rev3: Fábio Henrique Cabrini
-#include <WiFi.h>
-#include <PubSubClient.h>
+
+#include <WiFi.h>   // Biblioteca para conectar o ESP32 no Wi-Fi
+#include <PubSubClient.h>   // Biblioteca para comunicação MQTT (publicar/assinar tópicos)
 
 // Configurações - variáveis editáveis
 const char* default_SSID = "FIAP-IOT"; // Nome da rede Wi-Fi
@@ -35,12 +33,12 @@ char* TOPICO_PUBLISH_2 = const_cast<char*>(default_TOPICO_PUBLISH_2);
 char* ID_MQTT = const_cast<char*>(default_ID_MQTT);
 int D4 = default_D4;
 
-WiFiClient espClient;
-PubSubClient MQTT(espClient);
-char EstadoSaida = '0';
+WiFiClient espClient;   // Cliente Wi-Fi
+PubSubClient MQTT(espClient);   // Cliente MQTT (usa o Wi-Fi para enviar dados)
+char EstadoSaida = '0';     // Guarda se o LED está ligado ('1') ou desligado ('0')
 
 void initSerial() {
-    Serial.begin(115200);
+    Serial.begin(115200);   // Inicia o monitor serial para debug
 }
 
 void initWiFi() {
@@ -49,33 +47,33 @@ void initWiFi() {
     Serial.print("Conectando-se na rede: ");
     Serial.println(SSID);
     Serial.println("Aguarde");
-    reconectWiFi();
+    reconectWiFi();     // Chama função que realmente conecta ao Wi-Fi
 }
 
 void initMQTT() {
-    MQTT.setServer(BROKER_MQTT, BROKER_PORT);
-    MQTT.setCallback(mqtt_callback);
+    MQTT.setServer(BROKER_MQTT, BROKER_PORT);   // Define o broker e a porta
+    MQTT.setCallback(mqtt_callback);    // Define a função que vai tratar mensagens recebidas
 }
 
 void setup() {
-    InitOutput();
-    initSerial();
-    initWiFi();
-    initMQTT();
-    delay(5000);
-    MQTT.publish(TOPICO_PUBLISH_1, "s|on");
+    InitOutput();   // Faz o LED piscar (efeito de inicialização)
+    initSerial();   // Ativa o monitor serial
+    initWiFi();     // Conecta no Wi-Fi
+    initMQTT();     // Conecta no Broker MQTT
+    delay(5000);    
+    MQTT.publish(TOPICO_PUBLISH_1, "s|on");     // Publica que a lâmpada iniciou ligada
 }
 
 void loop() {
-    VerificaConexoesWiFIEMQTT();
-    EnviaEstadoOutputMQTT();
-    handleLuminosity();
-    MQTT.loop();
+    VerificaConexoesWiFIEMQTT();    // Garante que Wi-Fi e MQTT estejam conectados
+    EnviaEstadoOutputMQTT();        // Envia estado do LED (ligado/desligado) para o Broker
+    handleLuminosity();             // Lê sensor de luminosidade e envia valor
+    MQTT.loop();                    // Mantém a comunicação MQTT ativa
 }
 
 void reconectWiFi() {
     if (WiFi.status() == WL_CONNECTED)
-        return;
+        return;     // Se já estiver conectado, sai da função
     WiFi.begin(SSID, PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         delay(100);
@@ -106,20 +104,20 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 
     // Compara com o tópico recebido
     if (msg.equals(onTopic)) {
-        digitalWrite(D4, HIGH);
+        digitalWrite(D4, HIGH);     // Liga LED
         EstadoSaida = '1';
     }
 
     if (msg.equals(offTopic)) {
-        digitalWrite(D4, LOW);
+        digitalWrite(D4, LOW);      // Desliga LED
         EstadoSaida = '0';
     }
 }
 
 void VerificaConexoesWiFIEMQTT() {
     if (!MQTT.connected())
-        reconnectMQTT();
-    reconectWiFi();
+        reconnectMQTT();    // Se perdeu conexão MQTT, reconecta
+    reconectWiFi();     // Se perdeu Wi-Fi, reconecta
 }
 
 void EnviaEstadoOutputMQTT() {
@@ -154,7 +152,7 @@ void reconnectMQTT() {
         Serial.println(BROKER_MQTT);
         if (MQTT.connect(ID_MQTT)) {
             Serial.println("Conectado com sucesso ao broker MQTT!");
-            MQTT.subscribe(TOPICO_SUBSCRIBE);
+            MQTT.subscribe(TOPICO_SUBSCRIBE);       // Assina o tópico de comando
         } else {
             Serial.println("Falha ao reconectar no broker.");
             Serial.println("Haverá nova tentativa de conexão em 2s");
@@ -164,11 +162,11 @@ void reconnectMQTT() {
 }
 
 void handleLuminosity() {
-    const int potPin = 34;
-    int sensorValue = analogRead(potPin);
-    int luminosity = map(sensorValue, 0, 4095, 0, 100);
+    const int potPin = 34;      // Entrada analógica
+    int sensorValue = analogRead(potPin);       // Lê valor entre 0 e 4095
+    int luminosity = map(sensorValue, 0, 4095, 0, 100);     // Converte para 0–100 (%)
     String mensagem = String(luminosity);
     Serial.print("Valor da luminosidade: ");
     Serial.println(mensagem.c_str());
-    MQTT.publish(TOPICO_PUBLISH_2, mensagem.c_str());
+    MQTT.publish(TOPICO_PUBLISH_2, mensagem.c_str());   // Publica no broker
 }
