@@ -9,6 +9,11 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
 
 ---
 
+## 📷 Imagem do Protótipo
+![Esquema do Circuito](./img/circuito-poclamp.png)
+
+---
+
 ## ⚙️ Funcionalidades  
 ✔️ Conexão Wi-Fi com autenticação.  
 ✔️ Conexão ao **Broker MQTT**.  
@@ -23,16 +28,17 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
 ## 🔧 Componentes Utilizados  
 | Componente          | Quantidade | Função no Projeto |
 |---------------------|------------|-------------------|
-| ESP32               | 1          | Microcontrolador principal com Wi-Fi integrado |
+| ESP32 DevKit        | 1          | Microcontrolador principal com Wi-Fi integrado |
 | LED (Onboard D4)    | 1          | Representa a lâmpada inteligente |
-| Potenciômetro / LDR | 1          | Simula sensor de luminosidade |
+| LDR                 | 1          | Simula sensor de luminosidade |
 | Broker MQTT (FIWARE/Orion) | 1 | Comunicação entre IoT e Backend |
 | Jumpers             | -          | Conexões de teste |
 
 ---
 
 ## 📦 Dependências do Projeto  
-- **Linguagem:** C++ (Arduino IDE / PlatformIO)  
+- **Linguagem:** C++ (Ex: Arduino IDE/ PlatformIO)
+Antes de compilar e carregar o projeto na placa ESP32, certifique-se de instalar as seguintes bibliotecas na IDE do Arduino:
 - **Bibliotecas:**  
   - `WiFi.h` → Gerencia a conexão Wi-Fi.  
   - `PubSubClient.h` → Implementa o protocolo MQTT no ESP32.  
@@ -40,19 +46,62 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
 ---
 
 ## 🏗️ Arquitetura e Contexto do Projeto  
+O projeto **Smart Lamp** foi desenvolvido como uma **PoC (Proof of Concept)** para demonstrar como a plataforma **FIWARE** pode ser utilizada em conjunto com dispositivos **IoT (ESP32)**, protocolos **MQTT** e serviços em nuvem (como **Azure VM**).  
 
+A arquitetura segue o padrão em **camadas**:  
 ### 📌 Arquitetura em Camadas  
 1. **Camada IoT (Dispositivo Físico)**  
-   - ESP32 conectado via Wi-Fi.  
-   - Sensor de luminosidade e LED (Smart Lamp).  
+   - O **ESP32** coleta dados de luminosidade (via potenciômetro/LDR).  
+   - Envia esses dados ao **Broker MQTT**.  
+   - Recebe comandos para ligar/desligar a lâmpada.   
 
-2. **Camada Backend (Comunicação e Middleware)**  
-   - **Broker MQTT** no FIWARE (recebe/publica mensagens).  
-   - Context Broker (Orion) gerenciando entidades IoT.  
+2. **Camada Backend (FIWARE)**  
+   - **Orion Context Broker** → gerencia o contexto da lâmpada (estado ON/OFF).  
+   - **STH-Comet** → armazena histórico de luminosidade.  
+   - **IoT Agent MQTT** → traduz mensagens MQTT em entidades FIWARE.  
+   - **MongoDB** → banco de dados dos contextos.  
+   - **Eclipse-Mosquitto** → broker MQTT responsável pela comunicação.   
 
 3. **Camada Aplicação (Interface do Usuário)**  
    - Usuário envia comandos de ligar/desligar via Postman ou interface FIWARE.  
-   - Aplicações/dashboards podem consumir dados de luminosidade.  
+   - Visualiza estado atual da lâmpada e histórico de luminosidade.  
+
+### ⚙️ Instalação e Configuração  
+O FIWARE Descomplicado foi instalado em uma máquina virtual do Microsoft Azure.
+#### 1️⃣ Clonar e iniciar o FIWARE Descomplicado:  
+```bash
+git clone https://github.com/fabiocabrini/fiware
+cd fiware
+sudo docker-compose up -d
+```
+
+#### 2️⃣ Configurar portas no firewall da VM:
+- `1026/TCP` → Orion Context Broker
+
+- `1883/TCP` → Mosquitto (MQTT)
+
+- `4041/TCP` → IoT-Agent MQTT
+
+- `8666/TCP` → STH-Comet
+
+#### 3️⃣ Ajustar credenciais no código do ESP32:
+```cpp
+const char* default_SSID = "sua_rede_wifi";
+const char* default_PASSWORD = "sua_senha_wifi";
+const char* default_BROKER_MQTT = "ip_host_fiware";
+```
+
+### 💡 Criação da Entidade Lógica (PoC Smart Lamp)
+No FIWARE, a lâmpada é representada como uma entidade lógica, chamada Smart Lamp:
+- ID: lamp001
+- Atributos de Estado: ligado/desligado
+- Atributos de Sensoriamento: luminosidade (0–100%)
+- Comandos: ligar/desligar
+
+Fluxo da entidade:
+1. O ESP32 publica luminosidade em `/TEF/lamp001/attrs/l`.
+2. O ESP32 publica estado atual em `/TEF/lamp001/attrs`.
+3. O ESP32 recebe comandos do broker em `/TEF/lamp001/cmd`.
 
 ---
 
@@ -64,25 +113,31 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
 ---
 
 ## 📂 Estrutura do Projeto
-```cpp
+```plaintext
 📁 smart-lamp-fiware
-│── 📄 README.md            # Documentação do projeto
-│── 📄 smartlamp.ino        # Código principal para o ESP32
-│── 📁 /lib                 # Bibliotecas adicionais
-│── 📁 /img                 # Imagens e diagramas do projeto
+│── 📄 README.md                 # Documentação do projeto
+│── 📄 smartlamp.ino             # Código principal para o ESP32
+│── 📁 /img                      
+   │── 📷 circuito-poclamp.png   # Imagem do projeto
 ```
 
 ---
 
 ## 🛠️ Como Montar e Replicar este Projeto
 
-### 1️⃣ Montagem do Circuito
+### 1. Montagem do Circuito
 
-- Conectar potenciômetro/LDR ao pino 34 (ADC) do ESP32.
+- Instale a Arduino IDE e selecione a placa ESP32 Dev Module.
+
+- Conectar LDR ao pino 34 (ADC) do ESP32.
 
 - Utilizar o LED onboard (D4) para simular a lâmpada.
 
-### 2️⃣ Configuração do Código
+### 2. Bibliotecas
+- Instale as bibliotecas WiFi.h e PubSubClient.h.
+
+### 3. Configuração do Código
+- Copie o código-fonte fornecido.
 - Editar no código os parâmetros:
 
    ```cpp
@@ -92,16 +147,12 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
    const int default_BROKER_PORT = 1883;
    ```
 
-### 3️⃣ Execução do Sistema
+### 4. Execução do Sistema
 
 - Carregar o código no ESP32.
-- Iniciar o FIWARE + MQTT Broker na VM/Docker:
-
-   ```cpp
-   sudo docker-compose up -d
-   ```
-
-- Usar o Postman para enviar comandos e monitorar a lâmpada.
+- Abra o Serial Monitor (115200 baud) para acompanhar logs.
+- Usar o Postman para enviar comandos e monitorar o LED.
+- Confira a publicação automática da luminosidade (0–100%).
 
 ---
 
@@ -111,7 +162,7 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
 2. O ESP32 conecta ao Broker MQTT.
 
 3. O dispositivo escuta no tópico:
-   ```cpp
+   ```bash
    /TEF/lamp001/cmd
    ```
 
@@ -120,12 +171,12 @@ A Smart Lamp pode ser **ligada e desligada remotamente** via **comandos MQTT**, 
 5. Se recebe comando lamp001@off| → Desliga LED.
 
 6. Publica estado em:
-   ```cpp
+   ```bash
    /TEF/lamp001/attrs
    ```
 
 e luminosidade em:
-   ```cpp
+   ```bash
    /TEF/lamp001/attrs/l
    ```
 
@@ -134,12 +185,12 @@ e luminosidade em:
 ## 🖥️ Operação
 ### Comandos de Teste (via Postman / MQTT)
 - #### Ligar Lâmpada
-   ```cpp
+   ```json
    lamp001@on|
    ```
 
 - #### Desligar Lâmpada
-   ```
+   ```json
    lamp001@off|
    ```
 
@@ -155,22 +206,19 @@ e luminosidade em:
 ---
 
 ## 📚 Recursos e Materiais
-- [FIWARE Documentation]()
-
-- [MQTT Protocol]()
-
-- [ESP32 Arduino Core]()
-
----
-
-## 📷 Imagem do Protótipo
-<img src="" alt=""></img>
+- [Repositório FIWARE Descomplicado](https://github.com/fabiocabrini/fiware)
 
 ---
 
 ## 🎥 Vídeo Explicativo
 
-📺 Assista ao vídeo explicando o projeto: [Link para o vídeo](https://youtu.be/s1YcKbS_FjU?si=RLxZdAGxY7t1xoHK)
+📺 Assista ao vídeo explicando o projeto: [Link para o vídeo]()
+
+---
+
+## ⌨ Simulação no Wokwi
+
+🖲 [Clique aqui para abrir](https://wokwi.com/projects/440939768900818945)
 
 ---
 
