@@ -212,13 +212,13 @@ e luminosidade em:
 
 ## 🎥 Vídeo Explicativo
 
-📺 Assista ao vídeo explicando o projeto: [Link para o vídeo]()
+📺 Assista ao vídeo explicando o projeto: [Link para o vídeo](https://youtu.be/EQW0LHzMcRQ?si=Eq8QhTGj2LVnmyAi)
 
 ---
 
 ## ⌨ Simulação no Wokwi
 
-🖲 [Clique aqui para abrir](https://wokwi.com/projects/440939768900818945)
+🖲 [Clique aqui para abrir](https://wokwi.com/projects/381403531345819649)
 
 ---
 
