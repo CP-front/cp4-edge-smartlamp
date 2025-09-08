@@ -225,7 +225,7 @@ e luminosidade em:
 ## 👨‍💻 Autores
 
 - Projeto desenvolvido por **Visionary Solutions** para a disciplina Edge Computing - FIAP.
-- Equipe: Arthur Araujo Tenorio, Breno Gonçalves Báo, Rodrigo Cardoso Tadeo, Vinicius Cavalcanti dos Reis
+- Equipe: Arthur Araujo Tenorio; Breno Gonçalves Báo; Rodrigo Cardoso Tadeo; Vinicius Cavalcanti dos Reis
 - Professor: Dr. Fábio H. Cabrini
 
 ---
