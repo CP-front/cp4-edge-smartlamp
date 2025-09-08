@@ -218,7 +218,7 @@ e luminosidade em:
 
 ## ⌨ Simulação no Wokwi
 
-🖲 [Clique aqui para abrir](https://wokwi.com/projects/381403531345819649)
+🖲 [Clique aqui para abrir](https://wokwi.com/projects/441493110503103489)
 
 ---
 
